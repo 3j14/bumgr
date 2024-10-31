@@ -1,0 +1,39 @@
+[project]
+name = "bumgr"
+version = "0.1.0"
+authors = [
+    {name = "Jonas Drotleff", email = "jonas.drotleff@3j14.de"},
+]
+description = "Backup management for restic"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.12"
+dependencies = [
+    "rich>=13.9.3",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Archiving :: Backup",
+    "Topic :: System :: Filesystems",
+    "Topic :: System :: Networking",
+]
+
+[project.scripts]
+bumgr = "bumgr:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+]
+
