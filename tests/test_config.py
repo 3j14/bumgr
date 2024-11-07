@@ -1,6 +1,3 @@
-import os
-from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import pytest
 from pytest import MonkeyPatch
@@ -18,7 +15,7 @@ def test_get_config_xdg_config(tmp_path, monkeypatch: MonkeyPatch):
     config_file = config_dir / "config.toml"
     config_file.touch(exist_ok=False)
     with monkeypatch.context() as m:
-        m.setitem(os.environ, "XDG_CONFIG_HOME", str(tmp_path))
+        m.setenv("XDG_CONFIG_HOME", str(tmp_path))
         config = get_config()
         assert config == config_file
 
