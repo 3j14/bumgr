@@ -24,16 +24,16 @@ classifiers = [
     "Topic :: System :: Networking",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+]
+
 [project.scripts]
 bumgr = "bumgr:cli"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.uv]
-dev-dependencies = [
-    "pytest>=8.3.3",
-    "ruff>=0.6.9",
-]
 
