@@ -58,7 +58,7 @@ def get_config(config: str | None = None) -> Path:
             raise FileNotFoundError(f"Config file '{config}' not found")
     checked_paths: list[str] = []
     testpaths = deque(["/etc/bumgr/config.toml", "./bumgr.toml"])
-    if "$XDG_CONFIG_HOME" in os.environ:
+    if "XDG_CONFIG_HOME" in os.environ:
         testpaths.appendleft(os.path.expandvars("$XDG_CONFIG_HOME/bumgr/config.toml"))
     else:
         testpaths.appendleft(os.path.expanduser("~/.config/bumgr/config.toml"))
