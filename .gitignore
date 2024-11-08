@@ -1,3 +1,11 @@
+# General
+.DS_Store
+._*
+
+# IDE
+.idea
+.vscode
+
 # Python
 __pycache__
 *.pyc
@@ -5,3 +13,6 @@ __pycache__
 .ruff*
 .python-version
 bumgr.toml
+.mypy_cache
+.pytest_cache
+/dist

@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Backup management for restic"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = {text = "BSD-3-Clause"}
 requires-python = ">=3.11"
 dependencies = [
     "rich>=13.9.3",
@@ -29,8 +29,8 @@ classifiers = [
 dev = [
     "ruff>=0.6.9",
     "pre-commit>=4.0.1",
+    "mypy>=1.13.0",
 ]
-
 test = [
     "pytest>=8.3.3",
 ]
@@ -38,9 +38,27 @@ test = [
 [project.scripts]
 bumgr = "bumgr:cli"
 
+[project.urls]
+"Release notes" = "https://github.com/3j14/bumgr/blob/main/CHANGELOG.md"
+Source = "https://github.com/3j14/bumgr"
+Tracker = "https://github.com/3j14/bumgr/issues"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+ignore-vcs = true
+include = [
+    "/bumgr/",
+    "/tests/",
+    "LICENSE",
+    "README.md",
+    "pyproject.toml",
+]
+[tool.hatch.build.targets.wheel]
+packages = ["/bumgr"]
+only-packages = true
 
 [tool.ruff]
 line-length = 88
