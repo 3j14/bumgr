@@ -28,6 +28,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
     "ruff>=0.6.9",
+    "pre-commit>=4.0.1",
 ]
 
 test = [
