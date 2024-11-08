@@ -217,7 +217,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
 
     @property
     def env(self) -> dict:
-        envs = dict()
+        envs: dict[str, str | None] = dict()
         if self.pass_env_all:
             envs.update(os.environ)
         elif self.pass_env_path:

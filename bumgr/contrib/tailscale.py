@@ -14,7 +14,7 @@ class Tailscale(BumgrPlugin, Executable):
         self.connected = connected
         self.exit_node = exit_node
         self.prev_connection_status: bool = False
-        self.prev_exit_node: bool = False
+        self.prev_exit_node: str | None = None
 
     @classmethod
     def check_config(cls, config: dict, **kwargs) -> None:
