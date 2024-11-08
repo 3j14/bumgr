@@ -1,6 +1,6 @@
 [project]
 name = "bumgr"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     {name = "Jonas Drotleff", email = "jonas.drotleff@3j14.de"},
 ]
