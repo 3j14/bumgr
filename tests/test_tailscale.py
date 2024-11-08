@@ -8,6 +8,7 @@ import pytest
 from bumgr.contrib.tailscale import Tailscale
 
 
+@pytest.mark.usefixtures("patch_executables")
 def test_tailscale_status(monkeypatch: pytest.MonkeyPatch):
     tailscale = Tailscale(connected=True, exit_node="exit")
     mock = MagicMock()
@@ -63,6 +64,7 @@ def test_tailscale_status(monkeypatch: pytest.MonkeyPatch):
         ),
     ],
 )
+@pytest.mark.usefixtures("patch_executables")
 def test_tailscale_exit_node_status(
     status: dict, ret_val: str | None, monkeypatch: pytest.MonkeyPatch
 ):
@@ -84,6 +86,7 @@ def test_tailscale_exit_node_status(
         ({}, False),
     ],
 )
+@pytest.mark.usefixtures("patch_executables")
 def test_tailscale_connection_status(
     status: dict, connected: bool, monkeypatch: pytest.MonkeyPatch
 ):
@@ -100,6 +103,7 @@ def test_tailscale_connection_status(
     "initial, desired",
     [(True, True), (True, False), (False, False), (False, True)],
 )
+@pytest.mark.usefixtures("patch_executables")
 def test_tailscale_up_down(initial, desired, monkeypatch: pytest.MonkeyPatch):
     tailscale = Tailscale(connected=desired, exit_node=None)
     exe = tailscale.executable
@@ -131,6 +135,7 @@ def test_tailscale_up_down(initial, desired, monkeypatch: pytest.MonkeyPatch):
     "initial, desired",
     [(None, "exitnode"), ("exitnode", None), (None, None), ("exitnode1", "exitnode2")],
 )
+@pytest.mark.usefixtures("patch_executables")
 def test_tailscale_exit_node(initial, desired, monkeypatch: pytest.MonkeyPatch):
     tailscale = Tailscale(connected=True, exit_node=desired)
     exe = tailscale.executable
