@@ -1,9 +1,9 @@
 __all__ = ["Executable"]
 
-from abc import ABC
-from typing import ClassVar
 import os
+from abc import ABC
 from shutil import which
+from typing import ClassVar
 
 
 class Executable(ABC):

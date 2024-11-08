@@ -1,17 +1,16 @@
-from contextlib import ExitStack
-import os
-import errno
+import argparse
+import logging
 import sys
 import tomllib
-import argparse
+from contextlib import ExitStack
 from pathlib import Path
-from bumgr.backup import Backup, ConfigError
-from bumgr.config import get_config, handle_config_error
-from bumgr.contrib import BumgrPlugin, plugin_loader
-import logging
+
 from rich.console import Console
 from rich.logging import RichHandler
 
+from bumgr.backup import Backup, ConfigError
+from bumgr.config import get_config, handle_config_error
+from bumgr.contrib import BumgrPlugin, plugin_loader
 
 logger = logging.getLogger("bumgr.main")
 

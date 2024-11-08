@@ -1,16 +1,16 @@
 import json
-import os
-from os.path import expanduser, expandvars
-from pathlib import Path
-import shutil
-from tempfile import mkstemp
 import logging
+import os
+import shutil
 import subprocess
 from contextlib import AbstractContextManager
+from os.path import expanduser, expandvars
+from pathlib import Path
+from tempfile import mkstemp
 from typing import Any, Self
-from bumgr.executable import Executable
-from bumgr.config import ConfigError, Configurable
 
+from bumgr.config import ConfigError, Configurable
+from bumgr.executable import Executable
 
 logger = logging.getLogger("bumgr.backup")
 
@@ -265,7 +265,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
             )
         if (not password_file) and (not password_command):
             if (
-                complete_env.get("RESITC_PASSWORD_COMMAND") is None
+                complete_env.get("RESTIC_PASSWORD_COMMAND") is None
                 and complete_env.get("RESTIC_PASSWORD_FILE") is None
             ):
                 errors.append(
@@ -296,8 +296,8 @@ class Backup(AbstractContextManager, Executable, Configurable):
             *self._password_args,
             "init",
         ]
-        logger.debug(f"Running command '{" ".join(args)}'...")
-        result = subprocess.run(args)
+        logger.debug(f"Running command '{' '.join(args)}'...")
+        subprocess.run(args)
 
     def mount(self) -> None:
         if self.mount_point is None:
@@ -311,9 +311,9 @@ class Backup(AbstractContextManager, Executable, Configurable):
             "mount",
             self._expand_path(self.mount_point),
         ]
-        logger.debug(f"Running command '{" ".join(args)}'...")
+        logger.debug(f"Running command '{' '.join(args)}'...")
         try:
-            result = subprocess.run(args, check=True)
+            subprocess.run(args, check=True)
         except KeyboardInterrupt:
             pass
 
@@ -329,7 +329,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
             "--quiet",
             "--json",
         ]
-        logger.debug(f"Running command '{" ".join(args)}'...")
+        logger.debug(f"Running command '{' '.join(args)}'...")
         result = subprocess.run(args, capture_output=True, text=True, env=self.env)
         if result.returncode != 0:
             logger.error(f"restic failed with exit code '{result.returncode}'")
@@ -339,12 +339,12 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 message = json.loads(line)
                 if message.get("message_type") == "summary":
                     files_new = message.get("files_new")
-                    files_changed = message.get("files_changed")
-                    dirs_new = message.get("dirs_new")
-                    dirs_changed = message.get("dirs_changed")
-                    data_added = message.get("data_added")
+                    files_changed = message.get("files_changed")  # noqa: F841
+                    dirs_new = message.get("dirs_new")  # noqa: F841
+                    dirs_changed = message.get("dirs_changed")  # noqa: F841
+                    data_added = message.get("data_added")  # noqa: F841
                     data_added_packed = message.get("data_added_packed")
-                    total_duration = message.get("total_duration")
+                    total_duration = message.get("total_duration")  # noqa: F841
                     logger.info(
                         f"restic: Added {files_new} new files, "
                         f"{data_added_packed} bytes added (compressed)"

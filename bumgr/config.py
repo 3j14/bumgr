@@ -1,7 +1,8 @@
-from collections import deque
 import os
-from pathlib import Path
 from abc import ABC, abstractmethod
+from collections import deque
+from pathlib import Path
+
 from rich.abc import RichRenderable
 from rich.console import Console
 from rich.padding import Padding
@@ -67,4 +68,4 @@ def get_config(config: str | None = None) -> Path:
         if path.is_file():
             return path
         checked_paths.append(str(path))
-    raise FileNotFoundError(f"No config file found in {", ".join(checked_paths)}")
+    raise FileNotFoundError(f"No config file found in {', '.join(checked_paths)}")

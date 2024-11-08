@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
-from abc import ABCMeta
-from bumgr.config import ConfigError, Configurable
 import importlib
+from abc import ABCMeta
+from contextlib import AbstractContextManager
+
+from bumgr.config import ConfigError, Configurable
 
 
 class BumgrPlugin(AbstractContextManager, Configurable, metaclass=ABCMeta):

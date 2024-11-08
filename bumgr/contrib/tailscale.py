@@ -1,6 +1,5 @@
-from sys import platform
-import subprocess
 import json
+import subprocess
 
 from bumgr.config import ConfigError
 from bumgr.contrib import BumgrPlugin
@@ -47,7 +46,10 @@ class Tailscale(BumgrPlugin, Executable):
                 return None
             # Get the ID of the current exit node
             exit_node_id = exit_node_status.get("ID", None)
+            if exit_node_id is None:
+                return None
             # Iterate over all peers and find a matching ID
+            print(status)
             for peer in status.get("Peer", {}).values():
                 if peer.get("ID", None) == exit_node_id:
                     return peer.get("HostName", None)
