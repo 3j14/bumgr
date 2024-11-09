@@ -126,6 +126,13 @@ def cli():
         "backup",
         help=backup_help_text,
     )
+    env_parser = subparsers.add_parser(
+        "env", help="Output config as environment variables"
+    )
+    env_parser.add_argument(
+        "backup",
+        help=backup_help_text,
+    )
     args = parser.parse_args()
     console = Console(no_color=not args.color, quiet=args.quiet)
     log_level = (
@@ -191,3 +198,6 @@ def cli():
                         backup_exit_stack.enter_context(plugin)
                     backup_exit_stack.enter_context(backup)
                     backup.run_command(args.subcommand)
+    elif args.subcommand == "env":
+        backup, _ = backups[args.backup]
+        backup.run_command(args.subcommand)

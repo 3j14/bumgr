@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from contextlib import AbstractContextManager
 from os.path import expanduser, expandvars
 from pathlib import Path
@@ -234,6 +235,8 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 self.backup()
             case "mount":
                 self.mount()
+            case "env":
+                self.cli_env()
 
     @classmethod
     def check_config(cls, config: dict, subcommand: str = "backup", **kwargs) -> None:
@@ -288,6 +291,19 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 )
         if errors:
             raise ConfigError(errors)
+
+    def cli_env(self) -> None:
+        vars = {}
+        if self.repository is not None:
+            vars["RESTIC_REPOSITORY"] = self._expand_path(self.repository)
+        if self.password_file is not None:
+            vars["RESTIC_PASSWORD_FILE"] = self._expand_path(self.password_file)
+        if self.password_command is not None:
+            vars["RESTIC_PASSWORD_COMMAND"] = self.password_command
+        if self._env is not None:
+            vars.update(self._env)
+        text = " ".join(f'{env}="{val}"' for env, val in vars.items())
+        sys.stdout.write(text)
 
     def init(self) -> None:
         args = [
