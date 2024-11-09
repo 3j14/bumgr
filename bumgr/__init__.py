@@ -14,6 +14,8 @@ from bumgr.contrib import BumgrPlugin, plugin_loader
 
 logger = logging.getLogger("bumgr.main")
 
+__version__ = "0.3.0"
+
 
 def _cli_get_all(
     config: dict,
@@ -58,6 +60,9 @@ def cli():
     parser = argparse.ArgumentParser(
         prog="bumgr",
         description="Manage backups with restic on macOS and Linux",
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
     )
     parser.add_argument(
         "-c",

@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+Add the `--version` command line argument.
+
 ## 0.2.1
 
-## Fixes
+### Fixes
 
 Fix crash when specifying a config file using the `-c` command line
 argument.
