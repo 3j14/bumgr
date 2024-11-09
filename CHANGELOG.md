@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+This release adds the command `bumgr env` to be used with the `restic`
+executable.
+
+### Features
+- Add the command `bumgr env`.
+
 ## 0.1.1
 
 Minor changes made to the project metadata, adding a changelog, and

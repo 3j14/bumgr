@@ -3,6 +3,40 @@
 `bumgr` is a Python CLI application to manage backups using [restic](https://restic.net/).
 The name is short for "**B**ackup **M**ana**g**e**r**".
 
+## Usage
+
+Bumgr uses information stored in a configuration file located e.g. at
+`~/.config/bumgr/config.toml`. See **Configuration** for more information.
+
+### Backup
+
+To backup using Bumgr, you can use the `bumgr backup` command. If you
+only want to backup a specific backup configuration, you can specify
+the name of the backup (as specified in your `config.toml`):
+```shell
+bumgr backup mybackup
+```
+
+### Mount
+
+You may need to specify the mountpoint (an empty directory):
+```shell
+bumgr mount mybackup ~/Backup
+```
+
+Alternatively, you can specify the default mountpoint in the `config.toml`
+file.
+
+### Using `restic` itself
+
+To use your configuration with the `restic` executable, you can use the
+`bumgr env <backup>` command. It outputs a list of environment variables
+like `RESTIC_REPOSITORY="somerepo" RESTIC_PASSWORD_FILE="some/file"`.
+You can then pass these environment variables to restic:
+```shell
+eval $(bumgr env backupname) restic snapshots
+```
+
 ## Configuration
 
 The configuration is written in TOML and has two sections: A global section
