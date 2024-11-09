@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+## Fixes
+
+Fix crash when specifying a config file using the `-c` command line
+argument.
+
 ## 0.2.0
 
 This release adds the command `bumgr env` to be used with the `restic`
