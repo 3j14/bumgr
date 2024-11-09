@@ -63,7 +63,7 @@ def cli():
         "-c",
         "--config",
         dest="config_file",
-        type=argparse.FileType("r"),
+        type=Path,
         default=None,
         help="path of the config file.",
     )
