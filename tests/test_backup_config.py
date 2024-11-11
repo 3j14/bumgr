@@ -65,7 +65,7 @@ def test_backup_check_config_password_env(
 @pytest.mark.usefixtures("clean_env")
 def test_backup_check_config_mount(working_config):
     with pytest.raises(ConfigError, match="mount"):
-        Backup.check_config(working_config, subcommand="mount")
+        Backup.check_config(working_config, command="mount")
 
 
 @pytest.mark.usefixtures("clean_env")
