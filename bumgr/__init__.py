@@ -153,7 +153,7 @@ def cli():
         )
 
     config_path: Path = get_config(args.config_file)
-    logger.debug("Using config file '{config_path}'")
+    logger.debug(f"Using config file '{config_path}'")
     with config_path.open("rb") as config_file:
         try:
             config = tomllib.load(config_file)
