@@ -2,7 +2,6 @@ import argparse
 import logging
 import sys
 import tomllib
-from contextlib import ExitStack
 from pathlib import Path
 
 from rich.console import Console
@@ -10,7 +9,7 @@ from rich.logging import RichHandler
 
 from bumgr.backup import Backup, ConfigError
 from bumgr.config import get_config, handle_config_error
-from bumgr.contrib import BumgrPlugin, plugin_loader
+from bumgr.contrib import BumgrPlugin, SkippableExitStack, plugin_loader
 
 logger = logging.getLogger("bumgr.main")
 
@@ -20,14 +19,14 @@ __version__ = "0.3.0"
 def _cli_get_all(
     config: dict,
     console: Console,
-    subcommand: str,
+    command: str,
     mount_directory: str | None = None,
 ) -> tuple[list[BumgrPlugin], dict[str, tuple[Backup, list[BumgrPlugin]]]]:
     has_error: bool = False
     global_plugins: list[BumgrPlugin] = []
     for plugin in config.get("plugins", []):
         try:
-            global_plugins.append(plugin_loader(plugin))
+            global_plugins.append(plugin_loader(plugin, command))
         except ConfigError as error:
             has_error = True
             handle_config_error("plugins", error, console)
@@ -37,14 +36,14 @@ def _cli_get_all(
         backup_plugins: list[BumgrPlugin] = []
         for plugin in backup.pop("plugins", []):
             try:
-                backup_plugins.append(plugin_loader(plugin))
+                backup_plugins.append(plugin_loader(plugin, command))
             except ConfigError as error:
                 has_error = True
                 handle_config_error(f"backups.{backup_name}.plugins", error, console)
         if mount_directory:
             backup["mount"] = mount_directory
         try:
-            Backup.check_config(backup, subcommand=subcommand)
+            Backup.check_config(backup, command=command)
             backups[backup_name] = (Backup(**backup), backup_plugins)
         except ConfigError as error:
             has_error = True
@@ -184,23 +183,23 @@ def cli():
         sys.exit(2)
 
     if args.subcommand in ["backup", "init", "mount"]:
-        with ExitStack() as exit_stack:
+        with SkippableExitStack() as exit_stack:
             for global_plugin in global_plugins:
-                exit_stack.enter_context(global_plugin)
+                exit_stack.enter_plugin_context(global_plugin)
             if args.subcommand == "backup":
                 for backup_name, (backup, plugins) in backups.items():
                     if len(args.backup) != 0 and backup_name not in args.backup:
                         continue
-                    with ExitStack() as backup_exit_stack:
+                    with SkippableExitStack() as backup_exit_stack:
                         for plugin in plugins:
-                            backup_exit_stack.enter_context(plugin)
+                            backup_exit_stack.enter_plugin_context(plugin)
                         backup_exit_stack.enter_context(backup)
                         backup.run_command(args.subcommand)
             else:
                 backup, plugins = backups[args.backup]
-                with ExitStack() as backup_exit_stack:
+                with SkippableExitStack() as backup_exit_stack:
                     for plugin in plugins:
-                        backup_exit_stack.enter_context(plugin)
+                        backup_exit_stack.enter_plugin_context(plugin)
                     backup_exit_stack.enter_context(backup)
                     backup.run_command(args.subcommand)
     elif args.subcommand == "env":

@@ -104,13 +104,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
             # filename to 'restic'
         return super().__enter__()
 
-    def __exit__(
-        self,
-        exc_type,
-        exc_value,
-        traceback,
-        /,
-    ):
+    def __exit__(self, exc_type, exc_value, traceback, /):
         if self.macos_exclude_item:
             if self._macos_exclude_temp_file is None:
                 logger.warning(
@@ -128,7 +122,6 @@ class Backup(AbstractContextManager, Executable, Configurable):
                     # Remove the file using 'unlink'
                     temp_file_path.unlink()
                     logger.debug("Removed temporary file used for exclude items")
-        return super().__exit__(exc_type, exc_value, traceback)  # noqa
 
     @property
     def hostname(self) -> str | None:
@@ -239,7 +232,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 self.cli_env()
 
     @classmethod
-    def check_config(cls, config: dict, subcommand: str = "backup", **kwargs) -> None:
+    def check_config(cls, config: dict, command: str = "backup", **kwargs) -> None:
         errors: list[tuple[str, str]] = []
         if not config.get("source", None):
             errors.append(("source", "Field has to be set"))
@@ -281,7 +274,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 logger.info(
                     "Using environment variables to retrieve password file or command."
                 )
-        if subcommand == "mount":
+        if command == "mount":
             if not config.get("mount"):
                 errors.append(
                     (
@@ -313,7 +306,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
             "init",
         ]
         logger.debug(f"Running command '{' '.join(args)}'...")
-        subprocess.run(args)
+        subprocess.run(args, env=self.env)
 
     def mount(self) -> None:
         if self.mount_point is None:
@@ -329,7 +322,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
         ]
         logger.debug(f"Running command '{' '.join(args)}'...")
         try:
-            subprocess.run(args, check=True)
+            subprocess.run(args, check=True, env=self.env)
         except KeyboardInterrupt:
             pass
 

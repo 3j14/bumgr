@@ -10,7 +10,15 @@ class Tailscale(BumgrPlugin, Executable):
     EXECUTABLE_LINUX = "/usr/bin/tailscale"
     EXECUTABLE_DARWIN = "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 
-    def __init__(self, connected: bool = True, exit_node: str | None = None):
+    def __init__(
+        self,
+        command: str,
+        include_commands: list[str] | None = None,
+        exclude_commands: list[str] | None = None,
+        connected: bool = True,
+        exit_node: str | None = None,
+    ):
+        super().__init__(command, include_commands, exclude_commands)
         self.connected = connected
         self.exit_node = exit_node
         self.prev_connection_status: bool = False
