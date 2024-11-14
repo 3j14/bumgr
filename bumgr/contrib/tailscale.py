@@ -1,3 +1,5 @@
+__all__ = ["Tailscale"]
+
 import json
 import subprocess
 

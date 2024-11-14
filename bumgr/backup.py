@@ -1,3 +1,5 @@
+__all__ = ["Backup"]
+
 import json
 import logging
 import os
@@ -9,6 +11,18 @@ from os.path import expanduser, expandvars
 from pathlib import Path
 from tempfile import mkstemp
 from typing import Any, Self
+
+from rich.console import Console
+from rich.filesize import decimal
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
+from rich.table import Table
 
 from bumgr.config import ConfigError, Configurable
 from bumgr.executable import Executable
@@ -36,7 +50,9 @@ class Backup(AbstractContextManager, Executable, Configurable):
         env: dict[str, Any] | None = None,
         pass_env_all: bool = False,
         pass_env_path: bool = True,
+        pass_env_home: bool = True,
         mount: str | None = None,
+        timeout: int = 1800,
     ):
         """
 
@@ -58,12 +74,18 @@ class Backup(AbstractContextManager, Executable, Configurable):
             variables. Note that these environment variable are only
             passed to restic, but are not available to expand paths.
         :param pass_env_all: Whether all environment variables that are
-            set when running this programm are passed to restic.
+            set when running this program are passed to restic.
             Defaults is ``False``.
         :param pass_env_path: Whether the 'PATH' environment is passed
-            to restic. Default is ``True``. Ignored if
-            :param:`pass_env_all` is ``True``.
+            to restic. Needed for password commands.
+            Default is ``True``. Ignored if :param:`pass_env_all`
+            is ``True``.
+        :param pass_env_home: Whether the 'HOME' environment is passed
+            to restic. Needed for using cache. Default is ``True``.
+            Ignored if :param:`pass_env_all` is ``True``.
         :param mount: Mount point
+        :param timeout: Timeout for the backup process.
+            Defaults to 1800 (30 min).
         """
         self.repository = repository
         self.source = source
@@ -84,8 +106,10 @@ class Backup(AbstractContextManager, Executable, Configurable):
         self._env = env
         self.pass_env_all = pass_env_all
         self.pass_env_path = pass_env_path
+        self.pass_env_home = pass_env_home
         self.mount_point = mount
         self.exclude_caches = exclude_caches
+        self.timeout = timeout
 
     def __enter__(self) -> Self:
         if self.macos_exclude_item:
@@ -214,31 +238,38 @@ class Backup(AbstractContextManager, Executable, Configurable):
         envs: dict[str, str | None] = dict()
         if self.pass_env_all:
             envs.update(os.environ)
-        elif self.pass_env_path:
-            envs["PATH"] = os.getenv("PATH")
+        else:
+            if self.pass_env_path:
+                envs["PATH"] = os.getenv("PATH")
+            if self.pass_env_home:
+                envs["HOME"] = os.getenv("HOME", expanduser("~"))
         if self._env is not None:
             envs.update(self._env)
         return envs
 
-    def run_command(self, command: str):
+    def run_command(self, command: str, name: str, console: Console) -> bool:
         match command:
             case "init":
-                self.init()
+                return self.init(name, console)
             case "backup":
-                self.backup()
+                return self.backup(name, console)
             case "mount":
-                self.mount()
+                return self.mount(name, console)
             case "env":
-                self.cli_env()
+                # cli_env does not need a name or console
+                # so it is omitted
+                return self.cli_env()
 
     @classmethod
-    def check_config(cls, config: dict, command: str = "backup", **kwargs) -> None:
+    def check_config(
+        cls, config: dict, command: str | None = "backup", **kwargs
+    ) -> None:
         errors: list[tuple[str, str]] = []
         if not config.get("source", None):
             errors.append(("source", "Field has to be set"))
         env: dict = config.get("env", {})
         if not isinstance(env, dict):
-            errors.append(("env", "Expected type 'dict' but got type '{type(env)}'"))
+            errors.append(("env", f"Expected type 'dict' but got type '{type(env)}'"))
             env = {}
         # Create a new dictionary that contains both env and envrion.
         # Used to later check if some fields are present as an
@@ -274,6 +305,11 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 logger.info(
                     "Using environment variables to retrieve password file or command."
                 )
+        timeout: int = config.get("timeout", 1800)
+        if not isinstance(timeout, int):
+            errors.append(
+                ("timeout", f"Expected type 'int' but got type '{type(timeout)}'")
+            )
         if command == "mount":
             if not config.get("mount"):
                 errors.append(
@@ -285,7 +321,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
         if errors:
             raise ConfigError(errors)
 
-    def cli_env(self) -> None:
+    def cli_env(self) -> bool:
         vars = {}
         if self.repository is not None:
             vars["RESTIC_REPOSITORY"] = self._expand_path(self.repository)
@@ -297,8 +333,9 @@ class Backup(AbstractContextManager, Executable, Configurable):
             vars.update(self._env)
         text = " ".join(f'{env}="{val}"' for env, val in vars.items())
         sys.stdout.write(text)
+        return True
 
-    def init(self) -> None:
+    def init(self, name: str, console: Console) -> bool:
         args = [
             self.executable,
             *self._repo_args,
@@ -307,8 +344,9 @@ class Backup(AbstractContextManager, Executable, Configurable):
         ]
         logger.debug(f"Running command '{' '.join(args)}'...")
         subprocess.run(args, env=self.env)
+        return True
 
-    def mount(self) -> None:
+    def mount(self, name: str, console: Console) -> bool:
         if self.mount_point is None:
             raise ConfigError(
                 ("mount", "Field has to be set, or use command line argument instead")
@@ -325,8 +363,9 @@ class Backup(AbstractContextManager, Executable, Configurable):
             subprocess.run(args, check=True, env=self.env)
         except KeyboardInterrupt:
             pass
+        return True
 
-    def backup(self):
+    def backup(self, name: str, console: Console) -> bool:
         args = [
             self.executable,
             *self._repo_args,
@@ -335,36 +374,96 @@ class Backup(AbstractContextManager, Executable, Configurable):
             self._expand_path(self.source),
             *self._exclude_args,
             *self._hostname_args,
-            "--quiet",
             "--json",
         ]
         logger.debug(f"Running command '{' '.join(args)}'...")
-        result = subprocess.run(args, capture_output=True, text=True, env=self.env)
-        if result.returncode != 0:
-            logger.error(f"restic failed with exit code '{result.returncode}'")
-            logger.info(f"restic: {result.stderr.rstrip()}")
-        for line in result.stdout.splitlines():
-            try:
-                message = json.loads(line)
-                if message.get("message_type") == "summary":
-                    files_new = message.get("files_new")
-                    files_changed = message.get("files_changed")  # noqa: F841
-                    dirs_new = message.get("dirs_new")  # noqa: F841
-                    dirs_changed = message.get("dirs_changed")  # noqa: F841
-                    data_added = message.get("data_added")  # noqa: F841
-                    data_added_packed = message.get("data_added_packed")
-                    total_duration = message.get("total_duration")  # noqa: F841
-                    logger.info(
-                        f"restic: Added {files_new} new files, "
-                        f"{data_added_packed} bytes added (compressed)"
-                    )
-                if message.get("message_type") == "error":
-                    error_message = message.get("error", {}).get("message")
-                    error_during = message.get("during")
-                    error_item = message.get("item")
-                    logger.info(
-                        f"restic: error at {error_item} (during {error_during})"
-                    )
-                    logger.info(f"restic: error message: {error_message}")
-            except json.JSONDecodeError:
-                logger.info(f"restic: {line}")
+        progress = Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            DownloadColumn(),
+            TimeElapsedColumn(),
+            TextColumn("{task.fields[errors]} errors"),
+            console=console,
+        )
+        with progress:
+            task = progress.add_task(name, total=None, errors=0)
+            with subprocess.Popen(args, stdout=subprocess.PIPE, env=self.env) as p:
+                while p.poll() is None:
+                    if p.stdout is None:
+                        # Check so that the type checker is happy.
+                        # 'Popen.stdout' can be None or IO.
+                        continue
+                    line: str = p.stdout.readline().decode("utf-8")
+                    if not line.startswith("{"):
+                        logger.warning(line)
+                    else:
+                        try:
+                            msg: dict[str, Any] = json.loads(line)
+                        except json.JSONDecodeError:
+                            logger.warning(f"{line}")
+                            continue
+                        match msg.get("message_type"):
+                            case "status":
+                                progress.update(
+                                    task,
+                                    completed=msg.get("bytes_done", None),
+                                    total=msg.get("total_bytes"),
+                                    errors=msg.get("error_count", 0),
+                                )
+                            case "error":
+                                err_msg = msg.get("error", {}).get("message")
+                                err_during = msg.get("during")  # noqa
+                                err_item = msg.get("item")
+                                output = f"Error ({name}): {err_msg} ({err_item})"
+                                logger.error(output)
+                                console.print(output)
+                            case "summary":
+                                files_new = msg.get("files_new")
+                                dirs_new = msg.get("dirs_new")  # noqa: F841
+                                files_changed = msg.get("files_changed")  # noqa: F841
+                                dirs_changed = msg.get("dirs_changed")  # noqa: F841
+                                data_added = msg.get("data_added", 0)  # noqa: F841
+                                data_added_packed = msg.get("data_added_packed", 0)
+                                total_duration = msg.get("total_duration")  # noqa: F841
+                                table = Table(
+                                    "Files added",
+                                    "Files changed",
+                                    "Dirs added",
+                                    "Dirs changed",
+                                    "Data added",
+                                    "Data added (compressed)",
+                                    title="Summary",
+                                )
+                                table.add_row(
+                                    files_new,
+                                    files_changed,
+                                    dirs_new,
+                                    dirs_changed,
+                                    decimal(data_added),
+                                    decimal(data_added_packed),
+                                )
+        match p.returncode:
+            case 0:
+                logger.info("Backup finished successfully")
+                return True
+            case 1:
+                raise ValueError("Restic command error")
+            case 2:
+                raise RuntimeError()
+            case 3:
+                logger.warning("Restic failed to read some data")
+                return True
+            case 10:
+                err = "Repository not found"
+            case 11:
+                err = "Failed to lock repository"
+            case 12:
+                err = "Wrong password"
+            case 130:
+                raise InterruptedError()
+            case code:
+                raise ValueError(f"Unknown error code: {code}")
+        console.print(f"[red]{err}[/red]")
+        logger.error(err)
+        return False

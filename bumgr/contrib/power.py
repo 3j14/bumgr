@@ -1,3 +1,5 @@
+__all__ = ["Power"]
+
 import json
 import subprocess
 

@@ -1,11 +1,11 @@
+__all__ = ["ConfigError", "Configurable", "get_config"]
+
 import os
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
 
 from rich.abc import RichRenderable
-from rich.console import Console
-from rich.padding import Padding
 from rich.table import Table
 from rich.text import Text
 
@@ -27,6 +27,9 @@ class ConfigError(ValueError, RichRenderable):
             error_grid.add_row(Text(field, style="yellow"), error)
         return error_grid
 
+    def __str__(self):
+        return "\n".join(f"{field}: {err}" for field, err in self.errors)
+
 
 class Configurable(ABC):
     """Configurable classes are classes that implement the method
@@ -43,11 +46,6 @@ class Configurable(ABC):
         raise NotImplementedError(
             "Configurable classes must implement the 'check_config' method"
         )
-
-
-def handle_config_error(context: str, error: ConfigError, console: Console) -> None:
-    console.print(f"[red]Config error in [underline]{context}[/underline]:[/red]")
-    console.print(Padding(error, (1, 4)))
 
 
 def get_config(config: str | None = None) -> Path:
