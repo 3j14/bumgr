@@ -396,53 +396,55 @@ class Backup(AbstractContextManager, Executable, Configurable):
                         continue
                     line: str = p.stdout.readline().decode("utf-8")
                     if not line.startswith("{"):
-                        logger.warning(line)
-                    else:
-                        try:
-                            msg: dict[str, Any] = json.loads(line)
-                        except json.JSONDecodeError:
-                            logger.warning(f"{line}")
-                            continue
-                        match msg.get("message_type"):
-                            case "status":
-                                progress.update(
-                                    task,
-                                    completed=msg.get("bytes_done", None),
-                                    total=msg.get("total_bytes"),
-                                    errors=msg.get("error_count", 0),
-                                )
-                            case "error":
-                                err_msg = msg.get("error", {}).get("message")
-                                err_during = msg.get("during")  # noqa
-                                err_item = msg.get("item")
-                                output = f"Error ({name}): {err_msg} ({err_item})"
-                                logger.error(output)
-                                console.print(output)
-                            case "summary":
-                                files_new = msg.get("files_new")
-                                dirs_new = msg.get("dirs_new")  # noqa: F841
-                                files_changed = msg.get("files_changed")  # noqa: F841
-                                dirs_changed = msg.get("dirs_changed")  # noqa: F841
-                                data_added = msg.get("data_added", 0)  # noqa: F841
-                                data_added_packed = msg.get("data_added_packed", 0)
-                                total_duration = msg.get("total_duration")  # noqa: F841
-                                table = Table(
-                                    "Files added",
-                                    "Files changed",
-                                    "Dirs added",
-                                    "Dirs changed",
-                                    "Data added",
-                                    "Data added (compressed)",
-                                    title="Summary",
-                                )
-                                table.add_row(
-                                    files_new,
-                                    files_changed,
-                                    dirs_new,
-                                    dirs_changed,
-                                    decimal(data_added),
-                                    decimal(data_added_packed),
-                                )
+                        if line.strip():
+                            logger.warning(line)
+                        continue
+                    try:
+                        msg: dict[str, Any] = json.loads(line)
+                    except json.JSONDecodeError:
+                        logger.warning(f"{line}")
+                        continue
+                    match msg.get("message_type"):
+                        case "status":
+                            progress.update(
+                                task,
+                                completed=msg.get("bytes_done", None),
+                                total=msg.get("total_bytes"),
+                                errors=msg.get("error_count", 0),
+                            )
+                        case "error":
+                            err_msg = msg.get("error", {}).get("message")
+                            err_during = msg.get("during")  # noqa
+                            err_item = msg.get("item")
+                            output = f"Error ({name}): {err_msg} ({err_item})"
+                            logger.error(output)
+                            console.print(output)
+                        case "summary":
+                            files_new = msg.get("files_new")
+                            dirs_new = msg.get("dirs_new")  # noqa: F841
+                            files_changed = msg.get("files_changed")  # noqa: F841
+                            dirs_changed = msg.get("dirs_changed")  # noqa: F841
+                            data_added = msg.get("data_added", 0)  # noqa: F841
+                            data_added_packed = msg.get("data_added_packed", 0)
+                            total_duration = msg.get("total_duration")  # noqa: F841
+                            table = Table(
+                                "Files added",
+                                "Files changed",
+                                "Dirs added",
+                                "Dirs changed",
+                                "Data added",
+                                "Data added (compressed)",
+                                title="Summary",
+                            )
+                            table.add_row(
+                                str(files_new),
+                                str(files_changed),
+                                str(dirs_new),
+                                str(dirs_changed),
+                                str(decimal(data_added)),
+                                str(decimal(data_added_packed)),
+                            )
+                            console.print(table)
         match p.returncode:
             case 0:
                 logger.info("Backup finished successfully")
