@@ -1,8 +1,7 @@
-
 import pytest
 from pytest import MonkeyPatch
 
-from bumgr import get_config
+from bumgr.config import get_config
 
 # Note: Other config files, located e.g. at '/etc/bumgr/config.toml'
 # or in the user path (if 'XDG_CONFIG_HOME' is not defined) are hard
