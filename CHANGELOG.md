@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+
+Add more verbose output to the CLI, and introduce the `Power` plugin.
+
+### Breaking changes
+- The parameters passed to `bumgr` have changed. Notably the verbosity,
+log file, and the new `--no-cli` parameter now behave differently.
+
+### Features
+- The `Power` plugin skips the backup if the device is not charging
+(macOS only at the moment).
+
 ## 0.3.0
 
 Add the `--version` command line argument.
