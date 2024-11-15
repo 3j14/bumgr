@@ -10,13 +10,11 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>/path/to/bumgr</string>
+		<string>--log-file /path/to/logfile</string>
+		<string>--no-cli</string>
 		<string>backup</string>
 		<string>all</string>
 	</array>
-	<key>StandardErrorPath</key>
-		<string>/path/to/log</string>
-	<key>StandardOutPath</key>
-	<string>/path/to/log</string>
 	<key>RunAtLoad</key>
 	<true/>
 	<key>StartInterval</key>
