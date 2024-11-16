@@ -36,7 +36,7 @@ class BumgrCli:
             description="Manage backups with restic on macOS and Linux",
         )
         self._subparsers = self._parser.add_subparsers(required=True, dest="command")
-        self._args = None
+        self._args: argparse.Namespace | None = None
         self._console: Console | None = None
 
         self._has_config_errors: bool = False
@@ -266,7 +266,12 @@ class BumgrCli:
                     self._config = tomllib.load(config_file)
                 except tomllib.TOMLDecodeError as err:
                     self.fail(f"Error while reading {config_path}: {err}")
-        return self._config
+        # mypy does not follow 'self.fail' and sees that it will exit,
+        # so for mypy, the except block has no valid return value and
+        # 'self._config' would still be 'None'. We can ignore the type
+        # checking for this return, as at this point 'self._config' has
+        # to be of type 'dict[str, Any]'.
+        return self._config  # type: ignore
 
     @property
     def global_plugins(self) -> list[BumgrPlugin]:

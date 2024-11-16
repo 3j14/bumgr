@@ -16,9 +16,7 @@ from rich.console import Console
 from rich.filesize import decimal
 from rich.progress import (
     BarColumn,
-    DownloadColumn,
     Progress,
-    TaskProgressColumn,
     TextColumn,
     TimeElapsedColumn,
 )
@@ -33,7 +31,8 @@ logger = logging.getLogger("bumgr.backup")
 class Backup(AbstractContextManager, Executable, Configurable):
     EXECUTABLE = "restic"
     # For the case that homebrew is not in PATH when bumgr is run
-    EXECUTABLE_DARWIN = "/opt/homebrew/bin/restic"
+    EXECUTABLE_DARWIN = ["restic", "/opt/homebrew/bin/restic"]
+    RESTIC_PROGRESS_FPS: str = "5"
 
     def __init__(
         self,
@@ -259,6 +258,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 # cli_env does not need a name or console
                 # so it is omitted
                 return self.cli_env()
+        return False
 
     @classmethod
     def check_config(
@@ -269,8 +269,16 @@ class Backup(AbstractContextManager, Executable, Configurable):
             errors.append(("source", "Field has to be set"))
         env: dict = config.get("env", {})
         if not isinstance(env, dict):
-            errors.append(("env", f"Expected type 'dict' but got type '{type(env)}'"))
+            errors.append(("env", f"Expected type 'dict' but got '{type(env)}'"))
             env = {}
+        for key, val in env.items():
+            if not isinstance(val, str | bytes):
+                errors.append(
+                    (
+                        f"env.{key}",
+                        f"Expected type 'str' or 'bytes' but got '{type(val)}'",
+                    )
+                )
         # Create a new dictionary that contains both env and envrion.
         # Used to later check if some fields are present as an
         # environment variable.
@@ -307,9 +315,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 )
         timeout: int = config.get("timeout", 1800)
         if not isinstance(timeout, int):
-            errors.append(
-                ("timeout", f"Expected type 'int' but got type '{type(timeout)}'")
-            )
+            errors.append(("timeout", f"Expected type 'int' but got '{type(timeout)}'"))
         if command == "mount":
             if not config.get("mount"):
                 errors.append(
@@ -375,30 +381,35 @@ class Backup(AbstractContextManager, Executable, Configurable):
             *self._exclude_args,
             *self._hostname_args,
             "--json",
+            "--no-scan",
         ]
         logger.debug(f"Running command '{' '.join(args)}'...")
         progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
-            TaskProgressColumn(),
-            DownloadColumn(),
+            TextColumn("{task.fields[total_size]}"),
             TimeElapsedColumn(),
             TextColumn("{task.fields[errors]} errors"),
             console=console,
         )
         with progress:
-            task = progress.add_task(name, total=None, errors=0)
-            with subprocess.Popen(args, stdout=subprocess.PIPE, env=self.env) as p:
+            task = progress.add_task(name, total=None, errors=0, total_size=0)
+            with subprocess.Popen(
+                args,
+                stdout=subprocess.PIPE,
+                env={"RESTIC_PROGRESS_FPS": "5", **self.env},
+            ) as p:
                 while p.poll() is None:
                     if p.stdout is None:
                         # Check so that the type checker is happy.
                         # 'Popen.stdout' can be None or IO.
                         continue
-                    line: str = p.stdout.readline().decode("utf-8")
-                    if not line.startswith("{"):
-                        if line.strip():
-                            logger.warning(line)
-                        continue
+                    else:
+                        line: str = p.stdout.readline().decode("utf-8")
+                        if not line.startswith("{"):
+                            if line.strip():
+                                logger.warning(line)
+                            continue
                     try:
                         msg: dict[str, Any] = json.loads(line)
                     except json.JSONDecodeError:
@@ -408,8 +419,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                         case "status":
                             progress.update(
                                 task,
-                                completed=msg.get("bytes_done", None),
-                                total=msg.get("total_bytes"),
+                                total_size=decimal(int(msg.get("bytes_done", 0))),
                                 errors=msg.get("error_count", 0),
                             )
                         case "error":
@@ -445,6 +455,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                                 str(decimal(data_added_packed)),
                             )
                             console.print(table)
+
         match p.returncode:
             case 0:
                 logger.info("Backup finished successfully")
