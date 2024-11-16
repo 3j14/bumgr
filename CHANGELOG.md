@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+
+Limit output of the `restic` command to avoid congestion of the *stdout*
+buffer.
+
 ## 0.4.0
 
 Add more verbose output to the CLI, and introduce the `Power` plugin.
