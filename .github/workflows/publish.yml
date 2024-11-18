@@ -42,4 +42,20 @@ jobs:
         name: python-package-distributions
         path: dist/
     - uses: pypa/gh-action-pypi-publish@release/v1
+  dispatch-homebrew-update:
+    name: Dispatch Homebrew update
+    needs:
+      - publish
+    runs-on: ubuntu-latest
+    environment:
+      repo: '3j14/homebrew-bumgr'
+      data: '{"event_type": "update", "client_payload": {"version": "${{ github.event.release.tag_name }}"}'
+    timeout-minutes: 1
+    steps:
+      - name: Dispatch Homebrew update
+        run: |
+          curl -H "Accept: application/vnd.github.everest-preview+json" \
+            -H "Authorization: token ${{ secrets.HOMEBREW_BUMGR_DISPATCH_PAT }}" \
+            --request POST \
+            --data $data https://api.github.com/repos/$repo/dispatches
 
