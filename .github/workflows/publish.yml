@@ -57,5 +57,5 @@ jobs:
           curl -H "Accept: application/vnd.github.everest-preview+json" \
             -H "Authorization: token ${{ secrets.HOMEBREW_BUMGR_DISPATCH_PAT }}" \
             --request POST \
-            --data $data https://api.github.com/repos/$repo/dispatches
+            --data '$data' 'https://api.github.com/repos/$repo/dispatches'
 
