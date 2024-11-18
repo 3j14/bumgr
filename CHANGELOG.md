@@ -3,7 +3,7 @@
 ## 0.4.2
 
 Fix error where `bumgr` could not run because `cli` is not imported
-in the __init__.py file.
+in the \_\_init\_\_.py file.
 
 ## 0.4.1
 
