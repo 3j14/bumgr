@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       repo: '3j14/homebrew-bumgr'
-      data: "{'event_type': 'update', 'client_payload': {'version': '${{ github.event.inputs.version }}'}"
+      data: "{'event_type': 'update', 'client_payload': {'version': '${{ github.event.inputs.version }}'}}"
     timeout-minutes: 1
     steps:
       - name: Dispatch Homebrew update
