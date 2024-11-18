@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2
+
+Fix error where `bumgr` could not run because `cli` is not imported
+in the __init__.py file.
+
 ## 0.4.1
 
 Limit output of the `restic` command to avoid congestion of the *stdout*
