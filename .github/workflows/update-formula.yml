@@ -13,8 +13,6 @@ permissions:
 jobs:
   dispatch-homebrew-update:
     name: Dispatch Homebrew update
-    needs:
-      - publish
     runs-on: ubuntu-latest
     env:
       repo: '3j14/homebrew-bumgr'
