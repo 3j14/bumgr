@@ -53,6 +53,6 @@ jobs:
           curl -H "Accept: application/vnd.github.everest-preview+json" \
             -H "Authorization: token ${{ secrets.HOMEBREW_BUMGR_DISPATCH_PAT }}" \
             --request POST \
-            --data '{"event_type": "update", "client_payload": {"version": "${{ github.event.inputs.version }}"}}' \
+            --data '{"event_type": "update", "client_payload": {"version": "${{ github.event.release.tag_name }}"}}' \
             'https://api.github.com/repos/3j14/homebrew-bumgr/dispatches'
 
