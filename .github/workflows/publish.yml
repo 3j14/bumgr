@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       repo: '3j14/homebrew-bumgr'
-      data: '{"event_type": "update", "client_payload": {"version": "${{ github.event.release.tag_name }}"}'
+      data: "{'event_type': 'update', 'client_payload': {'version': '${{ github.event.inputs.version }}'}"
     timeout-minutes: 1
     steps:
       - name: Dispatch Homebrew update
@@ -57,5 +57,5 @@ jobs:
           curl -H "Accept: application/vnd.github.everest-preview+json" \
             -H "Authorization: token ${{ secrets.HOMEBREW_BUMGR_DISPATCH_PAT }}" \
             --request POST \
-            --data '$data' 'https://api.github.com/repos/$repo/dispatches'
+          --data "$data" "https://api.github.com/repos/$repo/dispatches"
 
