@@ -122,8 +122,8 @@ def test_tailscale_up_down(initial, desired, monkeypatch: pytest.MonkeyPatch):
             assert mock_up_down.call_args_list == []
         else:
             calls_up_down = [
-                call([exe, "up"], check=True),
-                call([exe, "down"], check=True),
+                call([exe, "up"], check=True, capture_output=True),
+                call([exe, "down"], check=True, capture_output=True),
             ]
             if initial:
                 assert mock_up_down.call_args_list == list(reversed(calls_up_down))
@@ -154,6 +154,14 @@ def test_tailscale_exit_node(initial, desired, monkeypatch: pytest.MonkeyPatch):
             assert mock_set_exit_node.call_args_list == []
         else:
             assert mock_set_exit_node.call_args_list == [
-                call([exe, "set", f"--exit-node={desired or ''}"], check=True),
-                call([exe, "set", f"--exit-node={initial or ''}"], check=True),
+                call(
+                    [exe, "set", f"--exit-node={desired or ''}"],
+                    capture_output=True,
+                    check=True,
+                ),
+                call(
+                    [exe, "set", f"--exit-node={initial or ''}"],
+                    capture_output=True,
+                    check=True,
+                ),
             ]

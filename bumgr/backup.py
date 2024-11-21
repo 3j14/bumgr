@@ -33,6 +33,14 @@ class Backup(AbstractContextManager, Executable, Configurable):
     # For the case that homebrew is not in PATH when bumgr is run
     EXECUTABLE_DARWIN = ["restic", "/opt/homebrew/bin/restic"]
     RESTIC_PROGRESS_FPS: str = "5"
+    KEEP_ATTRIBUTES: list[str] = [
+        "keep_hourly",
+        "keep_daily",
+        "keep_weekly",
+        "keep_monthly",
+        "keep_yearly",
+        "keep_tag",
+    ]
 
     def __init__(
         self,
@@ -51,9 +59,14 @@ class Backup(AbstractContextManager, Executable, Configurable):
         pass_env_path: bool = True,
         pass_env_home: bool = True,
         mount: str | None = None,
+        keep_hourly: int | None = None,
+        keep_daily: int | None = None,
+        keep_weekly: int | None = None,
+        keep_monthly: int | None = None,
+        keep_yearly: int | None = None,
+        keep_tag: str | None = None,
     ):
         """
-
         :param source:
         :param repository:
         :param password_file:
@@ -105,6 +118,12 @@ class Backup(AbstractContextManager, Executable, Configurable):
         self.pass_env_home = pass_env_home
         self.mount_point = mount
         self.exclude_caches = exclude_caches
+        self.keep_hourly = keep_hourly
+        self.keep_daily = keep_daily
+        self.keep_weekly = keep_weekly
+        self.keep_monthly = keep_monthly
+        self.keep_yearly = keep_yearly
+        self.keep_tag = keep_tag
 
     def __enter__(self) -> Self:
         if self.macos_exclude_item:
@@ -168,6 +187,17 @@ class Backup(AbstractContextManager, Executable, Configurable):
             return ()
         else:
             return ("--host", hostname)
+
+    @property
+    def _keep_flags(self) -> list[str]:
+        flags: list[str] = []
+        for flag in self.KEEP_ATTRIBUTES:
+            value = getattr(self, flag, None)
+            if value is not None:
+                name = flag.replace("_", "-")
+                flags.append(f"--{name}")
+                flags.append(str(value))
+        return flags
 
     @property
     def _exclude_args(self) -> list[str]:
@@ -250,6 +280,8 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 return self.backup(name, console)
             case "mount":
                 return self.mount(name, console)
+            case "forget":
+                return self.forget(name, console)
             case "env":
                 # cli_env does not need a name or console
                 # so it is omitted
@@ -309,6 +341,16 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 logger.info(
                     "Using environment variables to retrieve password file or command."
                 )
+        if command == "forget" and not any(
+            [config.get(flag, None) for flag in cls.KEEP_ATTRIBUTES]
+        ):
+            errors.append(
+                (
+                    "keep_*",
+                    "At least one of the following fields "
+                    f"has to be set ({', '.join(cls.KEEP_ATTRIBUTES)})",
+                )
+            )
         if command == "mount":
             if not config.get("mount"):
                 errors.append(
@@ -317,6 +359,7 @@ class Backup(AbstractContextManager, Executable, Configurable):
                         "Field has to be set, or use command line argument instead",
                     )
                 )
+
         if errors:
             raise ConfigError(errors)
 
@@ -362,6 +405,23 @@ class Backup(AbstractContextManager, Executable, Configurable):
             subprocess.run(args, check=True, env=self.env)
         except KeyboardInterrupt:
             pass
+        return True
+
+    def forget(self, name: str, console: Console) -> bool:
+        flags = self._keep_flags
+        if flags == []:
+            raise ConfigError(
+                ("keep_*", "At least one of the keep_* fields has to be set")
+            )
+        args = [
+            self.executable,
+            *self._repo_args,
+            *self._password_args,
+            "forget",
+            "--prune",
+            *self._keep_flags,
+        ]
+        subprocess.run(args, env=self.env)
         return True
 
     def backup(self, name: str, console: Console) -> bool:

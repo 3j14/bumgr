@@ -29,6 +29,7 @@ class BumgrCli:
     DEFAULT_LOG_LEVEL = logging.CRITICAL
     NO_PLUGIN_COMMANDS = ["env"]
     SINGLE_BACKUP_COMMANDS = ["env", "init", "mount"]
+    MULTI_BACKUP_COMMANDS = ["backup", "forget"]
 
     def __init__(self) -> None:
         self._parser = argparse.ArgumentParser(
@@ -90,12 +91,25 @@ class BumgrCli:
             help="disable color output.",
         )
         self._setup_command_backup()
+        self._setup_command_forget()
         self._setup_command_mount()
         self._setup_command_init()
         self._setup_command_env()
 
     def _setup_command_backup(self):
         backup_parser = self._subparsers.add_parser("backup", help="Perform backups")
+        backup_parser.add_argument(
+            "backup",
+            nargs="*",
+            action="extend",
+            default=[],
+            help=f"optional {self._BACKUP_HELP_TEXT}",
+        )
+
+    def _setup_command_forget(self):
+        backup_parser = self._subparsers.add_parser(
+            "forget", help="Remove old snapshots"
+        )
         backup_parser.add_argument(
             "backup",
             nargs="*",
@@ -191,7 +205,7 @@ class BumgrCli:
 
     def _check_requested_backup_valid(self):
         valid_backups: set = set(self.backups.keys())
-        if self.command == "backup":
+        if self.command in self.MULTI_BACKUP_COMMANDS:
             # Only allow 'all' if the command allows multiple backups
             valid_backups.add("all")
         invalid_backups: set = set(self.requested_backup) - valid_backups

@@ -69,6 +69,14 @@ def test_backup_check_config_mount(working_config):
 
 
 @pytest.mark.usefixtures("clean_env")
+def test_backup_check_config_forget(working_config):
+    with pytest.raises(ConfigError, match="keep"):
+        Backup.check_config(working_config, command="forget")
+    working_config["keep_hourly"] = 42
+    Backup.check_config(working_config, command="forget")
+
+
+@pytest.mark.usefixtures("clean_env")
 def test_backup_check_config_repo_env(working_config, monkeypatch):
     del working_config["repository"]
     with pytest.raises(ConfigError):

@@ -59,7 +59,6 @@ class Tailscale(BumgrPlugin, Executable):
             if exit_node_id is None:
                 return None
             # Iterate over all peers and find a matching ID
-            print(status)
             for peer in status.get("Peer", {}).values():
                 if peer.get("ID", None) == exit_node_id:
                     return peer.get("HostName", None)
@@ -72,10 +71,10 @@ class Tailscale(BumgrPlugin, Executable):
         return False
 
     def up(self):
-        subprocess.run([self.executable, "up"], check=True)
+        subprocess.run([self.executable, "up"], capture_output=True, check=True)
 
     def down(self):
-        subprocess.run([self.executable, "down"], check=True)
+        subprocess.run([self.executable, "down"], capture_output=True, check=True)
 
     def set_connected(self, connected: bool):
         if connected:
@@ -86,7 +85,9 @@ class Tailscale(BumgrPlugin, Executable):
     def set_exit_node(self, exit_node: str | None):
         exit_node_str = exit_node if exit_node is not None else ""
         subprocess.run(
-            [self.executable, "set", f"--exit-node={exit_node_str}"], check=True
+            [self.executable, "set", f"--exit-node={exit_node_str}"],
+            check=True,
+            capture_output=True,
         )
 
     def __enter__(self):
