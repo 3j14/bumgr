@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+
+Add the 'forget' command.
+
 ## 0.4.2
 
 Fix error where `bumgr` could not run because `cli` is not imported
