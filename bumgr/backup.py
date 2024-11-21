@@ -51,7 +51,6 @@ class Backup(AbstractContextManager, Executable, Configurable):
         pass_env_path: bool = True,
         pass_env_home: bool = True,
         mount: str | None = None,
-        timeout: int = 1800,
     ):
         """
 
@@ -83,8 +82,6 @@ class Backup(AbstractContextManager, Executable, Configurable):
             to restic. Needed for using cache. Default is ``True``.
             Ignored if :param:`pass_env_all` is ``True``.
         :param mount: Mount point
-        :param timeout: Timeout for the backup process.
-            Defaults to 1800 (30 min).
         """
         self.repository = repository
         self.source = source
@@ -108,7 +105,6 @@ class Backup(AbstractContextManager, Executable, Configurable):
         self.pass_env_home = pass_env_home
         self.mount_point = mount
         self.exclude_caches = exclude_caches
-        self.timeout = timeout
 
     def __enter__(self) -> Self:
         if self.macos_exclude_item:
@@ -313,9 +309,6 @@ class Backup(AbstractContextManager, Executable, Configurable):
                 logger.info(
                     "Using environment variables to retrieve password file or command."
                 )
-        timeout: int = config.get("timeout", 1800)
-        if not isinstance(timeout, int):
-            errors.append(("timeout", f"Expected type 'int' but got '{type(timeout)}'"))
         if command == "mount":
             if not config.get("mount"):
                 errors.append(
