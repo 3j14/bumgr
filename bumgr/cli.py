@@ -307,7 +307,7 @@ class BumgrCli:
             return self._backups
         # else load the backups from the config
         self._backups = {}
-        mount_dir = getattr(self.args, "mount_directory", None)
+        mount_dir = getattr(self.args, "mount_dir", None)
         for backup_name, backup in self.config.get("backups", {}).items():
             if backup_name == "all":
                 # Disallow name 'all'
@@ -330,7 +330,7 @@ class BumgrCli:
                 backup["mount"] = mount_dir
             try:
                 # Only specify the command if the backup is actually requested
-                _cmd_name = self.command if self.is_requested(backup) else None
+                _cmd_name = self.command if self.is_requested(backup_name) else None
                 Backup.check_config(backup, command=_cmd_name)
                 self._backups[backup_name] = (Backup(**backup), backup_plugins)
             except ConfigError as err:
