@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+Fix check for mount command.
+
 ## 0.5.0
 
 Add the 'forget' command.
